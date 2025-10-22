@@ -1,4 +1,3 @@
-// app/index.js
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
@@ -13,10 +12,8 @@ export default function LoginScreen() {
       Alert.alert("Atenção", "Preencha todos os campos!");
       return;
     }
-
-    // Aqui futuramente entraremos com o Firebase Auth
     Alert.alert("Login realizado!", `Bem-vindo, ${email}`);
-    router.push("/map"); // navega para a tela do mapa
+    router.push("/map");
   };
 
   return (
@@ -52,44 +49,10 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 40,
-    color: "#ff5c5c",
-  },
-  input: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    marginBottom: 15,
-  },
-  button: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#ff5c5c",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  link: {
-    color: "#666",
-    fontSize: 15,
-  },
+  container: { flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", padding: 20 },
+  title: { fontSize: 32, fontWeight: "bold", marginBottom: 40, color: "#ff5c5c" },
+  input: { width: "100%", height: 50, backgroundColor: "#f5f5f5", borderRadius: 10, paddingHorizontal: 15, fontSize: 16, marginBottom: 15 },
+  button: { width: "100%", height: 50, backgroundColor: "#ff5c5c", borderRadius: 10, justifyContent: "center", alignItems: "center", marginBottom: 10 },
+  buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  link: { color: "#666", fontSize: 15 },
 });
