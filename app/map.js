@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -11,29 +10,19 @@ import {
 } from "react-native";
 import MapView, { Marker, UrlTile } from "react-native-maps";
 import * as Location from "expo-location";
-import {
-  collection,
-  onSnapshot,
-  addDoc,
-  serverTimestamp,
-  doc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { useRouter } from "expo-router";
 
 export default function MapScreen() {
   const [coords, setCoords] = useState(null);
   const [pedidos, setPedidos] = useState([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [descricao, setDescricao] = useState("");
-  const [tipo, setTipo] = useState("Pessoa");
   const [loading, setLoading] = useState(true);
-  const [editando, setEditando] = useState(null);
-  const [menuAtivo, setMenuAtivo] = useState(null);
   const [filtro, setFiltro] = useState("Todos");
-  const [pedidoSelecionado, setPedidoSelecionado] = useState(null); // 👈 novo estado
+  const [pedidoSelecionado, setPedidoSelecionado] = useState(null);
+
+  const router = useRouter();
 
   // Localização do usuário
   useEffect(() => {
@@ -57,49 +46,6 @@ export default function MapScreen() {
     });
     return () => unsub();
   }, []);
-
-  // Criar ou editar pedido
-  const handleAddPedido = async () => {
-    if (!descricao) return Alert.alert("Preencha a descrição!");
-    try {
-      if (editando) {
-        await updateDoc(doc(db, "pedidos", editando), { descricao, tipo });
-        Alert.alert("Pedido atualizado!");
-        setEditando(null);
-      } else {
-        await addDoc(collection(db, "pedidos"), {
-          tipo,
-          descricao,
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          data: serverTimestamp(),
-        });
-        Alert.alert("Pedido criado!");
-      }
-      setDescricao("");
-      setModalVisible(false);
-    } catch (err) {
-      Alert.alert("Erro", err.message);
-    }
-  };
-
-  // Excluir pedido
-  const handleDeletePedido = async (id) => {
-    try {
-      await deleteDoc(doc(db, "pedidos", id));
-      setMenuAtivo(null);
-      Alert.alert("Pedido removido!");
-    } catch (err) {
-      Alert.alert("Erro", err.message);
-    }
-  };
-
-  // Alternar tipo no modal
-  const alternarTipo = () => {
-    if (tipo === "Pessoa") setTipo("ONG");
-    else if (tipo === "ONG") setTipo("Ração");
-    else setTipo("Pessoa");
-  };
 
   if (loading || !coords) {
     return (
@@ -144,6 +90,7 @@ export default function MapScreen() {
         ))}
       </View>
 
+      {/* Mapa */}
       <MapView
         style={styles.map}
         mapType="none"
@@ -171,7 +118,7 @@ export default function MapScreen() {
             <Marker
               key={p.id}
               coordinate={{ latitude: p.latitude, longitude: p.longitude }}
-              onPress={() => setPedidoSelecionado(p)} // 👈 abre modal
+              onPress={() => setPedidoSelecionado(p)}
             >
               <Icon name={icone.name} size={36} color={icone.color} />
             </Marker>
@@ -205,56 +152,16 @@ export default function MapScreen() {
         </Modal>
       )}
 
-      {/* Botão flutuante de novo pedido */}
+      {/* Botão flutuante para abrir tela de pedidos */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => {
-          setDescricao("");
-          setEditando(null);
-          setModalVisible(true);
-        }}
+        onPress={() => router.push("/requestHelp")}
       >
         <Icon name="plus" size={28} color="#fff" />
       </TouchableOpacity>
-
-      {/* Modal de criar/editar pedido */}
-      <Modal visible={modalVisible} animationType="fade" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {editando ? "Editar Pedido" : "Novo Pedido"}
-            </Text>
-
-            <TouchableOpacity style={styles.tipoBtn} onPress={alternarTipo}>
-              <Text style={styles.tipoText}>Tipo atual: {tipo}</Text>
-            </TouchableOpacity>
-
-            <TextInput
-              placeholder="Descrição"
-              value={descricao}
-              onChangeText={setDescricao}
-              style={styles.input}
-            />
-
-            <TouchableOpacity style={styles.btn} onPress={handleAddPedido}>
-              <Text style={styles.btnText}>
-                {editando ? "Salvar alterações" : "Criar pedido"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.btn, { backgroundColor: "#ccc" }]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.btnText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -326,21 +233,11 @@ const styles = StyleSheet.create({
     color: "#ff5c5c",
     textAlign: "center",
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 10,
-    marginVertical: 10,
+  modalDescription: {
+    fontSize: 16,
+    color: "#333",
+    textAlign: "center",
   },
-  tipoBtn: {
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-    alignItems: "center",
-  },
-  tipoText: { color: "#333", fontWeight: "bold" },
   btn: {
     backgroundColor: "#ff5c5c",
     padding: 12,
@@ -349,19 +246,4 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   btnText: { color: "#fff", fontWeight: "bold" },
-  menuOpcoes: {
-    position: "absolute",
-    bottom: 120,
-    right: 25,
-    backgroundColor: "#fff",
-    padding: 10,
-    borderRadius: 10,
-    elevation: 8,
-  },
-  menuBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 5,
-    gap: 5,
-  },
 });
