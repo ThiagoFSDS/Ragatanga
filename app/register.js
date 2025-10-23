@@ -1,19 +1,30 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../config/firebaseConfig"; // 👈 importa o auth
 
 export default function RegisterScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!email || !password) {
       Alert.alert("Erro", "Preencha todos os campos!");
       return;
     }
-    Alert.alert("Sucesso", "Conta criada com sucesso!");
-    router.push("/");
+
+    try {
+      // Cria usuário no Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      Alert.alert("Sucesso", `Conta criada para: ${user.email}`);
+      router.push("/"); // 👈 volta para tela de login
+    } catch (err) {
+      Alert.alert("Erro", err.message);
+    }
   };
 
   return (

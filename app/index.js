@@ -1,19 +1,30 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../config/firebaseConfig"; // 👈 importa o auth
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Atenção", "Preencha todos os campos!");
       return;
     }
-    Alert.alert("Login realizado!", `Bem-vindo, ${email}`);
-    router.push("/map");
+
+    try {
+      // Faz login no Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      Alert.alert("Login realizado!", `Bem-vindo, ${user.email}`);
+      router.push("/map"); // 👈 redireciona para o mapa
+    } catch (err) {
+      Alert.alert("Erro", err.message);
+    }
   };
 
   return (

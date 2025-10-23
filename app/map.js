@@ -8,7 +8,6 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
-  Animated,
 } from "react-native";
 import MapView, { Marker, UrlTile } from "react-native-maps";
 import * as Location from "expo-location";
@@ -34,8 +33,9 @@ export default function MapScreen() {
   const [editando, setEditando] = useState(null);
   const [menuAtivo, setMenuAtivo] = useState(null);
   const [filtro, setFiltro] = useState("Todos");
+  const [pedidoSelecionado, setPedidoSelecionado] = useState(null); // 👈 novo estado
 
-  // 1️⃣ Localização do usuário
+  // Localização do usuário
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -50,7 +50,7 @@ export default function MapScreen() {
     })();
   }, []);
 
-  // 2️⃣ Buscar pedidos no Firestore
+  // Buscar pedidos no Firestore
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "pedidos"), (snapshot) => {
       setPedidos(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
@@ -58,7 +58,7 @@ export default function MapScreen() {
     return () => unsub();
   }, []);
 
-  // 3️⃣ Criar ou editar pedido
+  // Criar ou editar pedido
   const handleAddPedido = async () => {
     if (!descricao) return Alert.alert("Preencha a descrição!");
     try {
@@ -83,7 +83,7 @@ export default function MapScreen() {
     }
   };
 
-  // 4️⃣ Excluir pedido
+  // Excluir pedido
   const handleDeletePedido = async (id) => {
     try {
       await deleteDoc(doc(db, "pedidos", id));
@@ -94,45 +94,12 @@ export default function MapScreen() {
     }
   };
 
-  // 5️⃣ Modal de formulário
-  const renderModal = () => (
-    <Modal visible={modalVisible} animationType="fade" transparent>
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>
-            {editando ? "Editar Pedido" : "Novo Pedido"}
-          </Text>
-
-          <TouchableOpacity
-            style={styles.tipoBtn}
-            onPress={() => setTipo(tipo === "Pessoa" ? "ONG" : "Pessoa")}
-          >
-            <Text style={styles.tipoText}>Tipo atual: {tipo}</Text>
-          </TouchableOpacity>
-
-          <TextInput
-            placeholder="Descrição"
-            value={descricao}
-            onChangeText={setDescricao}
-            style={styles.input}
-          />
-
-          <TouchableOpacity style={styles.btn} onPress={handleAddPedido}>
-            <Text style={styles.btnText}>
-              {editando ? "Salvar alterações" : "Criar pedido"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.btn, { backgroundColor: "#ccc" }]}
-            onPress={() => setModalVisible(false)}
-          >
-            <Text style={styles.btnText}>Cancelar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
+  // Alternar tipo no modal
+  const alternarTipo = () => {
+    if (tipo === "Pessoa") setTipo("ONG");
+    else if (tipo === "ONG") setTipo("Ração");
+    else setTipo("Pessoa");
+  };
 
   if (loading || !coords) {
     return (
@@ -142,14 +109,41 @@ export default function MapScreen() {
     );
   }
 
-  // 6️⃣ Filtragem dos pedidos
   const pedidosFiltrados =
-    filtro === "Todos"
-      ? pedidos
-      : pedidos.filter((p) => p.tipo === filtro);
+    filtro === "Todos" ? pedidos : pedidos.filter((p) => p.tipo === filtro);
+
+  // Ícone de cada tipo
+  const getIcon = (tipo) => {
+    if (tipo === "ONG") return { name: "hand-heart", color: "#ff6b6b" };
+    if (tipo === "Ração") return { name: "paw", color: "#f4a261" };
+    return { name: "account", color: "#4CAF50" };
+  };
 
   return (
     <View style={styles.container}>
+      {/* Barra de filtros no topo */}
+      <View style={styles.filtroContainer}>
+        {["Todos", "Pessoa", "ONG", "Ração"].map((item) => (
+          <TouchableOpacity
+            key={item}
+            style={[
+              styles.filtroBtn,
+              filtro === item && styles.filtroBtnAtivo,
+            ]}
+            onPress={() => setFiltro(item)}
+          >
+            <Text
+              style={[
+                styles.filtroTexto,
+                filtro === item && styles.filtroTextoAtivo,
+              ]}
+            >
+              {item}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <MapView
         style={styles.map}
         mapType="none"
@@ -171,73 +165,45 @@ export default function MapScreen() {
         </Marker>
 
         {/* Marcadores dos pedidos */}
-        {pedidosFiltrados.map((p) => (
-          <Marker
-            key={p.id}
-            coordinate={{ latitude: p.latitude, longitude: p.longitude }}
-            title={p.tipo}
-            description={p.descricao}
-            onPress={() => setMenuAtivo(p.id === menuAtivo ? null : p.id)}
-          >
-            <Icon
-              name={p.tipo === "ONG" ? "hand-heart" : "account"}
-              size={36}
-              color={p.tipo === "ONG" ? "#ff6b6b" : "#4CAF50"}
-            />
-          </Marker>
-        ))}
+        {pedidosFiltrados.map((p) => {
+          const icone = getIcon(p.tipo);
+          return (
+            <Marker
+              key={p.id}
+              coordinate={{ latitude: p.latitude, longitude: p.longitude }}
+              onPress={() => setPedidoSelecionado(p)} // 👈 abre modal
+            >
+              <Icon name={icone.name} size={36} color={icone.color} />
+            </Marker>
+          );
+        })}
       </MapView>
 
-      {/* Menu flutuante editar/excluir */}
-      {menuAtivo && (
-        <View style={styles.menuOpcoes}>
-          <TouchableOpacity
-            style={styles.menuBtn}
-            onPress={() => {
-              const p = pedidos.find((x) => x.id === menuAtivo);
-              setDescricao(p.descricao);
-              setTipo(p.tipo);
-              setEditando(p.id);
-              setModalVisible(true);
-              setMenuAtivo(null);
-            }}
-          >
-            <Icon name="pencil" size={20} color="#333" />
-            <Text>Editar</Text>
-          </TouchableOpacity>
+      {/* Modal de detalhes do pedido */}
+      {pedidoSelecionado && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setPedidoSelecionado(null)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>{pedidoSelecionado.tipo}</Text>
+              <Text style={styles.modalDescription}>
+                {pedidoSelecionado.descricao}
+              </Text>
 
-          <TouchableOpacity
-            style={styles.menuBtn}
-            onPress={() => handleDeletePedido(menuAtivo)}
-          >
-            <Icon name="delete" size={20} color="#e74c3c" />
-            <Text>Excluir</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity
+                style={[styles.btn, { marginTop: 20 }]}
+                onPress={() => setPedidoSelecionado(null)}
+              >
+                <Text style={styles.btnText}>Fechar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       )}
-
-      {/* Barra de filtros */}
-      <View style={styles.filtroContainer}>
-        {["Todos", "ONG", "Pessoa"].map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[
-              styles.filtroBtn,
-              filtro === item && styles.filtroBtnAtivo,
-            ]}
-            onPress={() => setFiltro(item)}
-          >
-            <Text
-              style={[
-                styles.filtroTexto,
-                filtro === item && styles.filtroTextoAtivo,
-              ]}
-            >
-              {item}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
 
       {/* Botão flutuante de novo pedido */}
       <TouchableOpacity
@@ -251,10 +217,44 @@ export default function MapScreen() {
         <Icon name="plus" size={28} color="#fff" />
       </TouchableOpacity>
 
-      {renderModal()}
+      {/* Modal de criar/editar pedido */}
+      <Modal visible={modalVisible} animationType="fade" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {editando ? "Editar Pedido" : "Novo Pedido"}
+            </Text>
+
+            <TouchableOpacity style={styles.tipoBtn} onPress={alternarTipo}>
+              <Text style={styles.tipoText}>Tipo atual: {tipo}</Text>
+            </TouchableOpacity>
+
+            <TextInput
+              placeholder="Descrição"
+              value={descricao}
+              onChangeText={setDescricao}
+              style={styles.input}
+            />
+
+            <TouchableOpacity style={styles.btn} onPress={handleAddPedido}>
+              <Text style={styles.btnText}>
+                {editando ? "Salvar alterações" : "Criar pedido"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: "#ccc" }]}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.btnText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   fab: {
     position: "absolute",
-    bottom: 90,
+    bottom: 40,
     right: 25,
     backgroundColor: "#ff5c5c",
     width: 60,
@@ -278,18 +278,23 @@ const styles = StyleSheet.create({
   },
   filtroContainer: {
     position: "absolute",
-    bottom: 15,
+    top: 50,
     alignSelf: "center",
     flexDirection: "row",
     backgroundColor: "#fff",
-    borderRadius: 20,
+    borderRadius: 25,
     padding: 6,
     elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    zIndex: 10,
   },
   filtroBtn: {
     paddingHorizontal: 15,
     paddingVertical: 8,
-    borderRadius: 15,
+    borderRadius: 20,
   },
   filtroBtnAtivo: {
     backgroundColor: "#ff5c5c",
@@ -346,7 +351,7 @@ const styles = StyleSheet.create({
   btnText: { color: "#fff", fontWeight: "bold" },
   menuOpcoes: {
     position: "absolute",
-    bottom: 170,
+    bottom: 120,
     right: 25,
     backgroundColor: "#fff",
     padding: 10,
