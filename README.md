@@ -1,50 +1,64 @@
-# Welcome to your Expo app 👋
+# 📱 DoaAqui
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo protótipo desenvolvido em **React Native (Expo)** para conectar pessoas, ONGs e doadores.  
+Permite que usuários **cadastrem pedidos de ajuda** (como roupas, alimentos, e ração) e visualizem em um **mapa interativo**.
 
-## Get started
+⚠️ **Importante:** Este protótipo roda apenas em **Android** (não testado em iOS).
 
-1. Install dependencies
+---
 
+## 🚀 Funcionalidades
+- Cadastro e login de usuários com **Firebase Authentication** (e-mail/senha).
+- Criação de pedidos de ajuda vinculados ao usuário logado.
+- Exibição dos pedidos em um **mapa interativo** com ícones diferentes para cada tipo.
+- Filtro de pedidos por categoria.
+- Modal com detalhes de cada pedido.
+- Botão flutuante no mapa para criar novos pedidos.
+
+---
+
+## 🛠️ Tecnologias utilizadas
+- React Native + Expo
+- Firebase Authentication
+- Firebase Firestore
+- react-native-maps
+- expo-location
+
+---
+
+## 📦 Pré-requisitos
+- Node.js (versão LTS)
+- Expo CLI
+- Dispositivo Android com o app **Expo Go**
+
+---
+
+## 🔧 Como rodar o projeto
+
+1. Clone este repositório:
    ```bash
+   git clone https://github.com/seu-usuario/doaaqui.git
+   cd doaaqui
+
+2. Instale as dependências: 
    npm install
-   ```
 
-2. Start the app
-
-   ```bash
+3. Inicie o app:
    npx expo start
-   ```
 
-In the output, you'll find options to open the app in a
+5. Instale através da play store o aplicativo **Expo Go**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+6. Escaneie o QR code com o app **Expo Go** no Android.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+   Limitações atuais
 
-## Get a fresh project
+1- Não testado no iOS.
 
-When you're ready, run:
+2- No Web, a UI carrega, mas o mapa não funciona (limitação do react-native-maps).
 
-```bash
-npm run reset-project
-```
+3- Protótipo focado em demonstração (não pronto para produção).
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+EQUIPE :
 
-## Learn more
+Jeliel Nunes, Thiago Sanson, Thiago Reis.
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
